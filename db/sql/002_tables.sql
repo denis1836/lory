@@ -1,0 +1,75 @@
+CREATE TABLE IF NOT EXISTS Users (
+    usrID BIGSERIAL PRIMARY KEY,
+    email VARCHAR(256) NOT NULL UNIQUE,
+    password_hash VARCHAR(256) NOT NULL,
+    
+    name VARCHAR(128),
+    description VARCHAR(1024),
+
+    is_verified BOOLEAN DEFAULT FALSE,
+
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    last_online TIMESTAMPTZ
+)
+
+CREATE TABLE IF NOT EXISTS Projects (
+    prjID BIGSERIAL PRIMARY KEY,
+    
+    usrID BIGINT REFERENCES Users(usrID), -- owner user ID
+
+    name VARCHAR(256),
+    description VARCHAR(1024),
+
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+)
+
+CREATE TABLE IF NOT EXISTS Tags (
+    tgID BIGSERIAL PRIMARY KEY,
+
+    name VARCHAR(128),
+    description VARCHAR(512),
+
+    color CHAR(7), --color in RGB hex
+
+    used_in_amount BIGINT
+)
+
+CREATE TABLE IF NOT EXISTS Articles (
+    artID BIGSERIAL PRIMARY KEY,
+    
+    prjID BIGINT REFERENCES Projects(prjID),
+    usrID BIGINT REFERENCES Users(usrID), -- creator user ID
+
+    title VARCHAR(512) NOT NULL,
+    content TEXT NOT NULL,
+
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+)
+
+CREATE TABLE IF NOT EXISTS Article_Changes (
+    artID BIGSERIAL PRIMARY KEY REFERENCES Articles(artID),
+    usrID BIGINT REFERENCES Users(usrID),
+
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+)
+
+CREATE TABLE IF NOT EXISTS Article_Tags (
+    artID BIGINT REFERENCES Articles(artID),
+    tgID BIGINT REFERENCES Tags(tgID),
+
+    PRIMARY KEY(artID, tgID)
+)
+
+CREATE TABLE IF NOT EXISTS Assets (
+    astID BIGSERIAL PRIMARY KEY,
+
+    prjID BIGINT REFERENCES Projects(prjID),
+    artID BIGINT REFERENCES Articles(artID),
+    usrID BIGINT REFERENCES Users(usrID) NOT NULL,
+
+    hash VARCHAR(256),
+    asset_type ASSET_TYPE,
+    comment VARCHAR(1024),
+
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+)

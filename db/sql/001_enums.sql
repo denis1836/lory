@@ -1,0 +1,1 @@
+CREATE TYPE ASSET_TYPE AS ENUM ('photo', 'video', 'sketch');
