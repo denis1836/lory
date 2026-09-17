@@ -1,0 +1,63 @@
+# go binaries
+bin/
+cmd/lory/lory
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# test files
+*.test
+*.out
+coverage.txt
+cp.out
+
+# secrets
+.env
+.env.*
+!.env.example
+*.local
+secrets/
+*.pem
+*.key
+*.cert
+
+# postgres local data
+db/data/
+.pgdata/
+pgdata/
+
+# assets and media
+uploads/
+
+# docker and k8s
+.docker/
+docker-compose.override.yml
+deploy/k8s/local-test.yml
+
+# IDEs
+.vscode/
+*.code-workspace
+.idea/
+*.iml
+*.swp
+*.swo
+*~
+\#*\#
+
+# OSs
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+
+# windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# linux
+.directory
