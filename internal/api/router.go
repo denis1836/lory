@@ -15,7 +15,8 @@ type Router struct {
 
 func NewRouter() *Router {
 	return &Router{
-		mux: http.NewServeMux(),
+		mux:         http.NewServeMux(),
+		middlewares: []Middleware{},
 	}
 }
 
@@ -23,13 +24,12 @@ func (r *Router) Use(mw ...Middleware) {
 	r.middlewares = append(r.middlewares, mw...)
 }
 
-func (r *Router) HandleFunc(pattern string, fn http.HandlerFunc) {
-	var h http.Handler = fn
-	for i := len(r.middlewares) - 1; i >= 0; i-- {
-		h = r.middlewares[i](h)
-	}
+func (r *Router) Get(path string, handler http.HandlerFunc, middlewares ...Middleware) {
+	r.handle("GET", path, handler, middlewares...)
+}
 
-	r.mux.Handle(pattern, h)
+func (r *Router) Post(path string, handler http.HandlerFunc, middlewares ...Middleware) {
+	r.handle("POST", path, handler, middlewares...)
 }
 
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -44,4 +44,20 @@ func InitRoutes(db *pgxpool.Pool) http.Handler {
 	//TODO: other api handlers endpoints
 
 	return r
+}
+
+func (r *Router) handle(method, path string, handler http.Handler, localMiddlewares ...Middleware) {
+	finalHandler := chain(handler, localMiddlewares...)
+
+	finalHandler = chain(finalHandler, r.middlewares...)
+
+	pattern := method + " " + path
+	r.mux.Handle(pattern, finalHandler)
+}
+
+func chain(h http.Handler, middlewares ...Middleware) http.Handler {
+	for i := len(middlewares) - 1; i >= 0; i-- {
+		h = middlewares[i](h)
+	}
+	return h
 }
