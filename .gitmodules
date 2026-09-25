@@ -1,0 +1,3 @@
+[submodule "ui"]
+    path = web-ui
+    url = https://gitlab.com/denis1836/lory-web-ui
