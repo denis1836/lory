@@ -1,17 +1,18 @@
 package middleware
 
 import (
+	"context"
 	"errors"
+	"log"
 	"net/http"
-	"os"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"lory/internal/api"
+	"lory/internal/config"
 )
-
-//TODO: veryfing token and role in middleware
 
 type contextKey string
 
@@ -22,22 +23,23 @@ type UserContext struct {
 	Role string
 }
 
-func Authenticate(db *pgxpool.Pool) func(http.Handler) http.Handler {
-	return func(h http.Handler) http.Handler {
+func Authenticate(db *pgxpool.Pool, cfg *config.Config) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			cookie, err := r.Cookies("session_payload")
+
+			cookie, err := r.Cookie("session_payload")
 			if err != nil {
 				if errors.Is(err, http.ErrNoCookie) {
 					api.Error(w, http.StatusUnauthorized, "No session. Log in.")
 					return
 				}
 				api.Error(w, http.StatusBadRequest, "Error reading cookie")
+				return
 			}
 
 			tokenString := cookie.Value
 
-			//TODO: fetch jwt secret from config object
-			secret := os.Getenv("JWT_SECRET")
+			secret := cfg.JWTSecret
 
 			token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
 				return []byte(secret), nil
@@ -52,6 +54,42 @@ func Authenticate(db *pgxpool.Pool) func(http.Handler) http.Handler {
 				return
 			}
 
+			claims, ok := token.Claims.(jwt.MapClaims)
+			if !ok {
+				api.Error(w, http.StatusUnauthorized, "Invalid token structure")
+				return
+			}
+
+			sessionIDFloat, ok := claims["sessionId"].(float64)
+			if !ok {
+				api.Error(w, http.StatusUnauthorized, "Missing sessionId")
+				return
+			}
+			sessionID := int(sessionIDFloat)
+
+			//TODO: add sessions table to db schema
+			var user UserContext
+			query := `
+				SELECT us.user_id, u.role
+				FROM User_Sessions us
+				JOIN Users u ON us.user_id = u.user_id
+				WHERE us.session_token = $1 AND us.expires_at > NOW();
+			`
+			err = db.QueryRow(r.Context(), query, sessionID).Scan(&user.ID, &user.Role)
+			if err != nil {
+				if errors.Is(err, pgx.ErrNoRows) {
+					api.Error(w, http.StatusUnauthorized, "Session expired or invalid.")
+					return
+				}
+				log.Printf("Auth DB error: %v", err)
+				api.Error(w, http.StatusInternalServerError, "Server error")
+				return
+			}
+
+			ctx := context.WithValue(r.Context(), userContextKey, &user)
+			r = r.WithContext(ctx)
+
+			next.ServeHTTP(w, r)
 		})
 	}
 }
