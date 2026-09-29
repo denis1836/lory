@@ -3,9 +3,13 @@ package main
 import (
 	"context"
 	"log"
+	"net/http"
+	"os"
 
+	"lory/internal/api"
 	"lory/internal/config"
 	"lory/internal/db"
+	"lory/internal/middleware"
 )
 
 func main() {
@@ -27,4 +31,14 @@ func main() {
 	}()
 	log.Println("Successfully connected to db!")
 
+	router := api.NewRouter()
+	middleware := middleware.Authenticate(Pool, cfg)
+
+	//TODO: routes loading
+
+	log.Printf("Server is listening on port %s", cfg.Port)
+	if err := http.ListenAndServe(":"+cfg.Port, router); err != nil {
+		log.Printf("Server crashed: %v", err)
+		os.Exit(1)
+	}
 }
