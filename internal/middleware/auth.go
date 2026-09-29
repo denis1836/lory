@@ -67,7 +67,6 @@ func Authenticate(db *pgxpool.Pool, cfg *config.Config) func(http.Handler) http.
 			}
 			sessionID := int(sessionIDFloat)
 
-			//TODO: add sessions table to db schema
 			var user UserContext
 			query := `
 				SELECT us.user_id, u.role
