@@ -2,8 +2,6 @@ package api
 
 import (
 	"net/http"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Middleware func(http.Handler) http.Handler
@@ -32,18 +30,12 @@ func (r *Router) Post(path string, handler http.HandlerFunc, middlewares ...Midd
 	r.handle("POST", path, handler, middlewares...)
 }
 
-func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	r.mux.ServeHTTP(w, req)
+func (r *Router) Static(dir string) {
+	r.mux.Handle("GET /", http.FileServer(http.Dir(dir)))
 }
 
-func InitRoutes(db *pgxpool.Pool) http.Handler {
-	r := NewRouter()
-
-	//TODO: add middleware layyers
-
-	//TODO: other api handlers endpoints
-
-	return r
+func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	r.mux.ServeHTTP(w, req)
 }
 
 func (r *Router) handle(method, path string, handler http.Handler, localMiddlewares ...Middleware) {

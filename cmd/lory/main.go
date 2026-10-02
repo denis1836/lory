@@ -5,11 +5,10 @@ import (
 	"log"
 	"net/http"
 	"os"
-
-	"lory/internal/api"
+	
+	"lory/internal/api/routes"
 	"lory/internal/config"
 	"lory/internal/db"
-	"lory/internal/middleware"
 )
 
 func main() {
@@ -18,12 +17,12 @@ func main() {
 
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatal("failed to load config %v", err)
+		log.Fatalf("failed to load config %v", err)
 	}
 
 	Pool, err := db.NewPool(ctx, cfg.DBUrl)
 	if err != nil {
-		log.Fatal("failed to create db pool: %w", err)
+		log.Fatalf("failed to create db pool: %v", err)
 	}
 	defer func() {
 		log.Println("Closing db pool...")
@@ -31,10 +30,7 @@ func main() {
 	}()
 	log.Println("Successfully connected to db!")
 
-	router := api.NewRouter()
-	middleware := middleware.Authenticate(Pool, cfg)
-
-	//TODO: routes loading
+	router := routes.InitRoutes(Pool)
 
 	log.Printf("Server is listening on port %s", cfg.Port)
 	if err := http.ListenAndServe(":"+cfg.Port, router); err != nil {
