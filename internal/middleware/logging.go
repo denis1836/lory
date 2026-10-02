@@ -54,11 +54,11 @@ func Logger(next http.Handler) http.Handler {
 			result = fmt.Sprintf("(Error: %d - %s)", sw.statusCode, bytes.TrimSpace(sw.body.Bytes()))
 		}
 
-		log.Printf("[ %s | %s ] -> %d -> %v",
+		log.Printf("[ %s | %s ] -> %s -> %v",
 			t.Format("2006-01-02 15:04:05"),
 			userID,
-			logCtx.Action,
 			result,
+			logCtx.Action,
 		)
 	})
 }
