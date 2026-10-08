@@ -4,16 +4,26 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"lory/internal/api"
+	"lory/internal/config"
 )
 
-func InitRoutes(db *pgxpool.Pool) *api.Router {
+func InitRoutes(db *pgxpool.Pool, cfg *config.Config) *api.Router {
 	r := api.NewRouter()
 
+	//MIDDLEWARE
 	//TODO: add middleware layyers
 
+	//HANDLERS
+	userHandler := NewUserHandler(db, cfg)
+
+	//HTML
+	r.Static("web-ui")
+
+	//GET
 	r.Get("/api/health", HealthHandler(db))
 
-	r.Static("web-ui")
+	//POST
+	r.Post("/api/user/register", userHandler.Register)
 
 	return r
 }

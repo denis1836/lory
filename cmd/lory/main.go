@@ -30,7 +30,7 @@ func main() {
 	}()
 	log.Println("Successfully connected to db!")
 
-	router := routes.InitRoutes(Pool)
+	router := routes.InitRoutes(Pool, cfg)
 
 	log.Printf("Server is listening on port %s", cfg.Port)
 	if err := http.ListenAndServe(":"+cfg.Port, router); err != nil {
