@@ -1,4 +1,5 @@
 # go binaries
+lory
 bin/
 cmd/lory/lory
 *.exe
