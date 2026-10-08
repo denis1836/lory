@@ -33,7 +33,7 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("missing .env fields (DB_USER, DB_PASS, DB_NAME)")
 	}
 
-	dbUrl := fmt.Sprintf("postgres://%s:%s/@%s:%s/%s?sslmode=disable", dbUser, dbPass, dbHost, dbPort, dbName)
+	dbUrl := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", dbUser, dbPass, dbHost, dbPort, dbName)
 
 	// security
 	jwtSecret := os.Getenv("JWT_SECRET")
