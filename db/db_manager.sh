@@ -537,8 +537,7 @@ case "$USER_ACTION" in
             DO \$$
             BEGIN
             IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '$user_login') THEN
-                CREATE ROLE '$user_login' WITH LOGIN PASSWORD '$user_pass';
-                ALTER ROLE '$user_login' WITH LOGIN;
+                CREATE ROLE \"$user_login\" WITH LOGIN PASSWORD '$user_pass';
             END IF;
             END
             \$$;
