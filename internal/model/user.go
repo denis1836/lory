@@ -22,3 +22,8 @@ type LoginReq struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
+
+type LoginPasswordCheck struct {
+	UserID       string
+	PasswordHash string
+}

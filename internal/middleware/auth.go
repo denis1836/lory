@@ -60,21 +60,20 @@ func Authenticate(db *pgxpool.Pool, cfg *config.Config) func(http.Handler) http.
 				return
 			}
 
-			sessionIDFloat, ok := claims["sessionId"].(float64)
+			sessionToken, ok := claims["sessionToken"].(string)
 			if !ok {
-				api.Error(w, http.StatusUnauthorized, "Missing sessionId")
+				api.Error(w, http.StatusUnauthorized, "Missing sessionToken")
 				return
 			}
-			sessionID := int(sessionIDFloat)
 
 			var user UserContext
 			query := `
-				SELECT us.user_id, u.role
+				SELECT us.usrID, u.role
 				FROM User_Sessions us
-				JOIN Users u ON us.user_id = u.user_id
+				JOIN Users u ON us.usrID = u.usrID
 				WHERE us.session_token = $1 AND us.expires_at > NOW();
 			`
-			err = db.QueryRow(r.Context(), query, sessionID).Scan(&user.ID, &user.Role)
+			err = db.QueryRow(r.Context(), query, sessionToken).Scan(&user.ID, &user.Role)
 			if err != nil {
 				if errors.Is(err, pgx.ErrNoRows) {
 					api.Error(w, http.StatusUnauthorized, "Session expired or invalid.")
