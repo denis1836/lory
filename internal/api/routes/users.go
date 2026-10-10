@@ -3,6 +3,7 @@ package routes
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"time"
 
@@ -52,7 +53,7 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	createUserQuery := `
 		INSERT INTO Users(name, email, password_hash, created_at, last_online, is_verified)
 		VALUES ($1, $2, $3, NOW(), NOW(), TRUE)
-		RETURNING user_id, name, email, created_at;
+		RETURNING usrID, name, email, created_at;
 	`
 	err = h.db.QueryRow(r.Context(), createUserQuery, req.Name, req.Email, string(hashedBytes)).Scan(
 		&user.ID, &user.Name, &user.Email, &user.CreatedAt,
@@ -65,6 +66,9 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 			api.Error(w, http.StatusBadRequest, "this email is already used")
 			return
 		}
+
+		log.Printf("REGISTER DB ERROR: %v", err)
+
 		api.Error(w, http.StatusInternalServerError, "database registration error")
 		return
 	}
@@ -100,6 +104,9 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 			api.Error(w, http.StatusBadRequest, "user with this email does not exist")
 			return
 		}
+
+		log.Printf("LOGIN DB ERROR: %v", err)
+
 		api.Error(w, http.StatusInternalServerError, "database login error")
 		return
 	}
