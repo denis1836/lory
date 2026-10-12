@@ -7,7 +7,7 @@
 # Contributors:  None
 # Created:       2026-07-28
 # Last modified: 2026-08-30
-# Version:       1.1.1
+# Version:       1.1.2
 # License:       MIT License
 # Repository:    https://github.com/denis1836/utils/tree/main/db_manager
 #########################################################################
@@ -537,7 +537,8 @@ case "$USER_ACTION" in
             DO \$$
             BEGIN
             IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '$user_login') THEN
-                CREATE ROLE \"$user_login\" WITH LOGIN PASSWORD '$user_pass';
+                CREATE ROLE '$user_login' WITH LOGIN PASSWORD '$user_pass';
+                ALTER ROLE '$user_login' WITH LOGIN;
             END IF;
             END
             \$$;
@@ -584,31 +585,40 @@ case "$USER_ACTION" in
         echo -e "${NC}Removed user: \"${user_login}\".${NC}"
     ;;
 
+   
     grant)
         case "${GRANT_LEVEL}" in 
             read)
                 affirm "Do you want to grant read privileges on the \"${DB_NAME}\" database to user \"${TARGET_USER}\"" && {
                     ${PSQL_RUNNER} psql -v ON_ERROR_STOP=1 -c "
-                        GRANT SELECT ON DATABASE ${DB_NAME} TO ${TARGET_USER};
+                        GRANT CONNECT ON DATABASE ${DB_NAME} TO ${TARGET_USER};
+                        \c ${DB_NAME}
+                        GRANT USAGE ON SCHEMA public TO ${TARGET_USER};
+                        GRANT SELECT ON ALL TABLES IN SCHEMA public TO ${TARGET_USER};
+                        GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO ${TARGET_USER};
                     "
                     echo -e "${HIGHLIGHT}[OK]${NC}Privileges granted to user \"${TARGET_USER}\".${NC}"
                 }
             ;;
-    
+
             readwrite)
-                affirm "Do you want to grant read privileges on the \"${DB_NAME}\" database to user \"${TARGET_USER}\"" && {
+                affirm "Do you want to grant read/write privileges on the \"${DB_NAME}\" database to user \"${TARGET_USER}\"" && {
                     ${PSQL_RUNNER} psql -v ON_ERROR_STOP=1 -c "
-                        GRANT SELECT INSERT UPDATE DELETE REFENCES ON DATABASE ${DB_NAME} TO ${TARGET_USER};
+                        GRANT CONNECT ON DATABASE ${DB_NAME} TO ${TARGET_USER};
+                        \c ${DB_NAME}
+                        GRANT USAGE ON SCHEMA public TO ${TARGET_USER};
+                        GRANT SELECT, INSERT, UPDATE, DELETE, REFERENCES ON ALL TABLES IN SCHEMA public TO ${TARGET_USER};
+                        GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO ${TARGET_USER};
                     "
                     echo -e "${HIGHLIGHT}[OK]${NC}Privileges granted to user \"${TARGET_USER}\".${NC}"
                 }
-
             ;;
 
             all)
                 affirm "Do you want to grant all privileges on the \"${DB_NAME}\" database to user \"${TARGET_USER}\"" && {
                     ${PSQL_RUNNER} psql -v ON_ERROR_STOP=1 -c "
                         GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${TARGET_USER};
+                        \c ${DB_NAME}
                         GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ${TARGET_USER};
                         GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO ${TARGET_USER};
                         GRANT USAGE ON SCHEMA cron TO ${TARGET_USER};
