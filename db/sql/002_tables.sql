@@ -47,7 +47,6 @@ CREATE TABLE IF NOT EXISTS Articles (
     artID BIGSERIAL PRIMARY KEY,
     
     prjID BIGINT REFERENCES Projects(prjID),
-    usrID BIGINT REFERENCES Users(usrID), -- creator user ID
 
     title VARCHAR(512) NOT NULL,
     content TEXT NOT NULL,
@@ -55,9 +54,17 @@ CREATE TABLE IF NOT EXISTS Articles (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS Article_Contributors (
+    artID BIGINT REFERENCES Articles(artID),
+    usrID BIGINT REFERENCES Users(usrID)
+);
+
 CREATE TABLE IF NOT EXISTS Article_Changes (
     artID BIGSERIAL PRIMARY KEY REFERENCES Articles(artID),
     usrID BIGINT REFERENCES Users(usrID),
+
+    message VARCHAR(256),
+    description VARCHAR(1024),
 
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
