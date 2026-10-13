@@ -7,7 +7,7 @@
 # Contributors:  None
 # Created:       2026-07-28
 # Last modified: 2026-08-30
-# Version:       1.1.2
+# Version:       1.1.3
 # License:       MIT License
 # Repository:    https://github.com/denis1836/utils/tree/main/db_manager
 #########################################################################
@@ -590,9 +590,8 @@ case "$USER_ACTION" in
         case "${GRANT_LEVEL}" in 
             read)
                 affirm "Do you want to grant read privileges on the \"${DB_NAME}\" database to user \"${TARGET_USER}\"" && {
-                    ${PSQL_RUNNER} psql -v ON_ERROR_STOP=1 -c "
+                    ${PSQL_RUNNER} psql -v ON_ERROR_STOP=1 -d "${DB_NAME}" -c "
                         GRANT CONNECT ON DATABASE ${DB_NAME} TO ${TARGET_USER};
-                        \c ${DB_NAME}
                         GRANT USAGE ON SCHEMA public TO ${TARGET_USER};
                         GRANT SELECT ON ALL TABLES IN SCHEMA public TO ${TARGET_USER};
                         GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO ${TARGET_USER};
@@ -603,9 +602,8 @@ case "$USER_ACTION" in
 
             readwrite)
                 affirm "Do you want to grant read/write privileges on the \"${DB_NAME}\" database to user \"${TARGET_USER}\"" && {
-                    ${PSQL_RUNNER} psql -v ON_ERROR_STOP=1 -c "
+                    ${PSQL_RUNNER} psql -v ON_ERROR_STOP=1 -d "${DB_NAME}" -c "
                         GRANT CONNECT ON DATABASE ${DB_NAME} TO ${TARGET_USER};
-                        \c ${DB_NAME}
                         GRANT USAGE ON SCHEMA public TO ${TARGET_USER};
                         GRANT SELECT, INSERT, UPDATE, DELETE, REFERENCES ON ALL TABLES IN SCHEMA public TO ${TARGET_USER};
                         GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO ${TARGET_USER};
@@ -616,9 +614,8 @@ case "$USER_ACTION" in
 
             all)
                 affirm "Do you want to grant all privileges on the \"${DB_NAME}\" database to user \"${TARGET_USER}\"" && {
-                    ${PSQL_RUNNER} psql -v ON_ERROR_STOP=1 -c "
+                    ${PSQL_RUNNER} psql -v ON_ERROR_STOP=1 -d "${DB_NAME}" -c "
                         GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${TARGET_USER};
-                        \c ${DB_NAME}
                         GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ${TARGET_USER};
                         GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO ${TARGET_USER};
                         GRANT USAGE ON SCHEMA cron TO ${TARGET_USER};
