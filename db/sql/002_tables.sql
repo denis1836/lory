@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS User_Sessions (
     usrID BIGINT REFERENCES Users(usrID),
 
     session_token VARCHAR(256) NOT NULL,
+    
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     expires_at TIMESTAMPTZ
 );
@@ -39,7 +40,7 @@ CREATE TABLE IF NOT EXISTS Tags (
     name VARCHAR(128),
     description VARCHAR(512),
 
-    color CHAR(7) CHECK (color ~ '^#[0-9A-Fa-f]{6}$', -- #RRGGBB
+    color CHAR(7) CHECK (color ~ '^#[0-9A-Fa-f]{6}$'), -- #RRGGBB
 
     is_global BOOL DEFAULT FALSE,
 
@@ -49,9 +50,11 @@ CREATE TABLE IF NOT EXISTS Tags (
 CREATE TABLE IF NOT EXISTS Articles (
     artID BIGSERIAL PRIMARY KEY,
     prjID BIGINT REFERENCES Projects(prjID),
+    
     slug VARCHAR(256) NOT NULL,
     title VARCHAR(512) NOT NULL,
-    content TEXT NOT NULL,
+    
+    content TEXT COMPRESSION lz4 NOT NULL,
 
     created_by BIGINT NOT NULL REFERENCES Users(usrID),
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -63,11 +66,15 @@ CREATE TABLE IF NOT EXISTS Article_Revisions (
     artRID BIGSERIAL PRIMARY KEY,
     artID BIGINT REFERENCES Articles(artID) ON DELETE CASCADE,
     usrID BIGINT REFERENCES Users(usrID),
+    
     rev_num INTEGER NOT NULL CHECK (rev_num >= 1),
+    
     title VARCHAR(512) NOT NULL,
-    content TEXT NOT NULL COMPRESSION lz4,
+    content TEXT NOT NULL,
+    
     content_hash BYTEA NOT NULL CHECK (octet_length(content_hash) = 32),
     message VARCHAR(256),
+    
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     CONSTRAINT art_revs_uniq UNIQUE (artID, rev_num)
