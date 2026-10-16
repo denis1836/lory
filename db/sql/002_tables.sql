@@ -34,44 +34,48 @@ CREATE TABLE IF NOT EXISTS Projects (
 
 CREATE TABLE IF NOT EXISTS Tags (
     tgID BIGSERIAL PRIMARY KEY,
+    project_ID BIGINT REFERENCES Projects(prjID),
 
     name VARCHAR(128),
     description VARCHAR(512),
 
-    color CHAR(7), --color in RGB hex
+    color CHAR(7) CHECK (color ~ '^#[0-9A-Fa-f]{6}$', -- #RRGGBB
 
-    used_in_amount BIGINT
+    is_global BOOL DEFAULT FALSE,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS Articles (
     artID BIGSERIAL PRIMARY KEY,
-    
     prjID BIGINT REFERENCES Projects(prjID),
-
+    slug VARCHAR(256) NOT NULL,
     title VARCHAR(512) NOT NULL,
     content TEXT NOT NULL,
 
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    created_by BIGINT NOT NULL REFERENCES Users(usrID),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    deleted_at TIMESTAMPTZ DEFAULT NULL
 );
 
-CREATE TABLE IF NOT EXISTS Article_Contributors (
-    artID BIGINT REFERENCES Articles(artID),
-    usrID BIGINT REFERENCES Users(usrID)
-);
-
-CREATE TABLE IF NOT EXISTS Article_Changes (
-    artID BIGSERIAL PRIMARY KEY REFERENCES Articles(artID),
+CREATE TABLE IF NOT EXISTS Article_Revisions (
+    artRID BIGSERIAL PRIMARY KEY,
+    artID BIGINT REFERENCES Articles(artID) ON DELETE CASCADE,
     usrID BIGINT REFERENCES Users(usrID),
-
+    rev_num INTEGER NOT NULL CHECK (rev_num >= 1),
+    title VARCHAR(512) NOT NULL,
+    content TEXT NOT NULL COMPRESSION lz4,
+    content_hash BYTEA NOT NULL CHECK (octet_length(content_hash) = 32),
     message VARCHAR(256),
-    description VARCHAR(1024),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    CONSTRAINT art_revs_uniq UNIQUE (artID, rev_num)
 );
 
 CREATE TABLE IF NOT EXISTS Article_Tags (
-    artID BIGINT REFERENCES Articles(artID),
-    tgID BIGINT REFERENCES Tags(tgID),
+    artID BIGINT REFERENCES Articles(artID) ON DELETE CASCADE,
+    tgID BIGINT REFERENCES Tags(tgID) ON DELETE CASCADE,
 
     PRIMARY KEY(artID, tgID)
 );
