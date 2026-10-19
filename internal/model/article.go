@@ -3,22 +3,25 @@ package model
 import "time"
 
 type Article struct {
-	ID        int64     `json:"id"`
-	ProjectID int64     `json:"project_id"`
-	Title     string    `json:"title"`
-	Content   string    `json:"content"`
+	ID        uint64 `json:"id"`
+	ProjectID uint64 `json:"project_id"`
+	Slug      string `json:"slug"`
+	Title     string `json:"title"`
+	Content   string `json:"content"`
+	CreatedBy User
 	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	DeletedAt time.Time `json:"deleted_at"`
 }
 
-type ArticleContributor struct {
-	ArticleID int64 `json:"article_id"`
-	UserID    int64 `json:"user_id"`
-}
-
-type ArticleChange struct {
-	ArticleChange int64     `json:"article_id"`
-	UserID        int64     `json:"user_id"`
-	Message       string    `json:"message"`
-	Description   string    `json:"description"`
-	CreatedAt     time.Time `json:"created_at"`
+type ArticleRevision struct {
+	ArticleRevisionID uint64 `json:"art_rev_id"`
+	ArticleID         uint64 `json:"id"`
+	User              User
+	RevisionNumber    uint64    `json:"rev_num"`
+	Title             string    `json:"title"`
+	Content           string    `json:"content"`
+	ContentHash       string    `json:"content_hash"`
+	Message           string    `json:"message"`
+	CreatedAt         time.Time `json:"created_at"`
 }
