@@ -13,6 +13,7 @@ import (
 	"lory/internal/api"
 	"lory/internal/config"
 	"lory/internal/model"
+	"lory/internal/middleware"
 )
 
 type ArticleHandler struct {
@@ -27,7 +28,11 @@ func NewArticleHandler(db *pgxpool.Pool, cfg *config.Config) *ArticleHandler {
 // POST /api/article/create
 func (h *ArticleHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var art model.Article
-	var usr model.User
+	var user, ok = middleware.GetUser(r.Context())
+	if !ok {
+		api.Error(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
 
 	if err := json.NewDecoder(r.Body).Decode(&art); err != nil {
 		api.Error(w, http.StatusBadRequest, "wrong JSON format")
@@ -38,8 +43,6 @@ func (h *ArticleHandler) Create(w http.ResponseWriter, r *http.Request) {
 		api.Error(w, http.StatusBadRequest, "missing fields")
 		return
 	}
-
-	//TODO: create user struct by getting info from "session_token" cookie
 
 	if art.Content == "" {
 		art.Content = "Article content"
@@ -53,7 +56,7 @@ func (h *ArticleHandler) Create(w http.ResponseWriter, r *http.Request) {
 		VALUES ($1, $2, $3, $4, $5)
 		RETURNING artID, created_at, updated_at;
 	`
-	err := h.db.QueryRow(r.Context(), createArticleQuery, art.ProjectID, art.Slug, art.Title, art.Content, usr.ID).Scan(
+	err := h.db.QueryRow(r.Context(), createArticleQuery, art.ProjectID, art.Slug, art.Title, art.Content, user.ID).Scan(
 		&art.ID, &art.CreatedAt, &art.UpdatedAt,
 	)
 
