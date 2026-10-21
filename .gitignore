@@ -8,6 +8,10 @@ cmd/lory/lory
 *.so
 *.dylib
 
+# logs
+logs/
+*.log
+
 # test files
 *.test
 *.out
