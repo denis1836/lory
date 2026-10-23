@@ -102,3 +102,39 @@ func (h *ArticleHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	return
 }
+
+// GET /api/article/<id>
+// redirects to the latest rev
+func (h *ArticleHandler) GetArticleById(w http.ResponseWriter, r *http.Request) {
+	return
+}
+
+// GET /api/article/<id>/<hash>
+// get article by specific rev
+func (h *ArticleHandler) GetArticleByIdAndHash(w http.ResponseWriter, r *http.Request) {
+	return
+}
+
+// POST /api/article/edit/<id>
+// edit article based on the latest rev
+func (h *ArticleHandler) EditArticleById(w http.ResponseWriter, r *http.Request) {
+	return
+}
+
+// POST /api/article/edit/<id>/info
+// info to display in ui while editing
+func (h *ArticleHandler) GetArtileEditInfo(w http.ResponseWriter, r *http.Request) {
+	return
+}
+
+// GET /api/article/contributors
+// users who contributed to the article and their connected stats
+func (h *ArticleHandler) GetArticleContributors(w http.ResponseWriter, r *http.Request) {
+	return
+}
+
+// GET /api/article/<id>/<hash>/diff
+// shows the diff with the previous rev
+func (h *ArticleHandler) GetArticleRevDiff(w http.ResponseWriter, r *http.Request) {
+	return
+}
