@@ -1,6 +1,8 @@
 package routes
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"log"
@@ -12,8 +14,8 @@ import (
 
 	"lory/internal/api"
 	"lory/internal/config"
-	"lory/internal/model"
 	"lory/internal/middleware"
+	"lory/internal/model"
 )
 
 type ArticleHandler struct {
@@ -69,15 +71,33 @@ func (h *ArticleHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 		log.Printf("INSERT DB ERROR: %v", err)
 
-		api.Error(w, http.StatusInternalServerError, "database insert error")
+		api.Error(w, http.StatusInternalServerError, "database error")
 		return
 	}
 
-	//TODO: add article revision logic
+	hashBytes := sha256.Sum256([]byte(art.Title + art.Content))
+	revHash := hex.EncodeToString(hashBytes[:])
+
+	var artRev model.ArticleRevision
+	insertFirstRevisionQuery := `
+		INSERT INTO Article_Revisions(artID, usrID, rev_num, title, content, content_hash, message)
+		VALUES($1, $2, $3, $4, $5, $6, $7)
+		RETURNING artRID, created_at;
+	`
+	err = h.db.QueryRow(r.Context(), insertFirstRevisionQuery, art.ID, user.ID, 1, art.Title, art.Content, revHash, "Create \""+art.Title+"\"").Scan(
+		&artRev.ID, &artRev.CreatedAt,
+	)
+
+	if err != nil {
+		log.Printf("INSERT DB ERROR: %v", err)
+		api.Error(w, http.StatusInternalServerError, "database error")
+		return
+	}
 
 	api.JSON(w, http.StatusCreated, map[string]interface{}{
 		"message": "article created",
 		"article": art,
+		"art_rev": artRev,
 	})
 
 	return

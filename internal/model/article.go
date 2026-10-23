@@ -15,13 +15,13 @@ type Article struct {
 }
 
 type ArticleRevision struct {
-	ArticleRevisionID uint64 `json:"art_rev_id"`
-	ArticleID         uint64 `json:"id"`
-	User              User
-	RevisionNumber    uint64    `json:"rev_num"`
-	Title             string    `json:"title"`
-	Content           string    `json:"content"`
-	ContentHash       string    `json:"content_hash"`
-	Message           string    `json:"message"`
-	CreatedAt         time.Time `json:"created_at"`
+	ID             uint64 `json:"art_rev_id"`
+	ArticleID      uint64 `json:"id"`
+	User           User
+	RevisionNumber uint64    `json:"rev_num"`
+	Title          string    `json:"title"`
+	Content        string    `json:"content"`
+	ContentHash    string    `json:"content_hash"`
+	Message        string    `json:"message"`
+	CreatedAt      time.Time `json:"created_at"`
 }

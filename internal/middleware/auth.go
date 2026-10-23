@@ -93,15 +93,15 @@ func Authenticate(db *pgxpool.Pool, cfg *config.Config) func(http.Handler) http.
 }
 
 func RequireAuth(mw func(http.Handler) http.Handler, next func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
-    return func(w http.ResponseWriter, r *http.Request) {
-        mw(http.HandlerFunc(next)).ServeHTTP(w, r)
-    }
+	return func(w http.ResponseWriter, r *http.Request) {
+		mw(http.HandlerFunc(next)).ServeHTTP(w, r)
+	}
 }
 
 func GetUser(ctx context.Context) (UserContext, bool) {
-    u, ok := ctx.Value(userContextKey).(*UserContext)
-    if !ok || u == nil {
-        return UserContext{}, false
-    }
-    return *u, true
+	u, ok := ctx.Value(userContextKey).(*UserContext)
+	if !ok || u == nil {
+		return UserContext{}, false
+	}
+	return *u, true
 }
