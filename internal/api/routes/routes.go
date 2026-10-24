@@ -16,6 +16,7 @@ func InitRoutes(db *pgxpool.Pool, cfg *config.Config) *api.Router {
 
 	//HANDLERS
 	userHandler := NewUserHandler(db, cfg)
+	projectHandler := NewProjectHandler(db, cfg)
 	articleHandler := NewArticleHandler(db, cfg)
 
 	//HTML
@@ -27,6 +28,8 @@ func InitRoutes(db *pgxpool.Pool, cfg *config.Config) *api.Router {
 	//POST
 	r.Post("/api/user/register", userHandler.Register)
 	r.Post("/api/user/login", userHandler.Login)
+
+	r.Post("/api/project/create", projectHandler.Create, authMiddleware)
 
 	r.Post("/api/article/create", articleHandler.Create, authMiddleware)
 	r.Get("/api/article/{id}", articleHandler.GetArticleById, authMiddleware)
