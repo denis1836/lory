@@ -7,8 +7,10 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -104,8 +106,47 @@ func (h *ArticleHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 // GET /api/article/<id>
-// redirects to the latest rev
+// shows the current state of the article (latest rev)
 func (h *ArticleHandler) GetArticleById(w http.ResponseWriter, r *http.Request) {
+	idParam := r.PathValue("id")
+	articleID, err := strconv.ParseInt(idParam, 10, 64)
+	if err != nil {
+		api.Error(w, http.StatusBadRequest, "invalid article id format")
+		return
+	}
+
+	var art model.Article
+	art.ID = uint64(articleID)
+
+	getArticleQuery := `
+		SELECT slug, title, content, created_by, created_at, updated_at
+		FROM Articles
+		WHERE artID = $1 AND deleted_at IS NULL;
+	`
+
+	err = h.db.QueryRow(r.Context(), getArticleQuery, art.ID).Scan(
+		&art.Slug, &art.Title, &art.Content, &art.CreatedBy, &art.CreatedAt, &art.UpdatedAt,
+	)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			api.Error(w, http.StatusNotFound, "article not found")
+			return
+		}
+
+		log.Printf("SELECT DB ERROR: %v", err)
+		api.Error(w, http.StatusInternalServerError, "database error")
+		return
+	}
+
+	api.JSON(w, http.StatusOK, map[string]interface{}{
+		"article": art,
+	})
+}
+
+// GET /api/article/<id>/history/<args>
+// gets a list off revs based on the given arguments
+func (h *ArticleHandler) GetArticleRevisionsHistory(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
@@ -123,7 +164,7 @@ func (h *ArticleHandler) EditArticleById(w http.ResponseWriter, r *http.Request)
 
 // POST /api/article/edit/<id>/info
 // info to display in ui while editing
-func (h *ArticleHandler) GetArtileEditInfo(w http.ResponseWriter, r *http.Request) {
+func (h *ArticleHandler) GetArticleEditInfo(w http.ResponseWriter, r *http.Request) {
 	return
 }
 

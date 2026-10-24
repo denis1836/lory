@@ -28,6 +28,7 @@ func InitRoutes(db *pgxpool.Pool, cfg *config.Config) *api.Router {
 	r.Post("/api/user/login", userHandler.Login)
 
 	r.Post("/api/article/create", articleHandler.Create)
+	r.Get("/api/article/{id}", articleHandler.GetArticleById)
 
 	return r
 }
