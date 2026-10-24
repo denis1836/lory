@@ -5,13 +5,14 @@ import (
 
 	"lory/internal/api"
 	"lory/internal/config"
+	"lory/internal/middleware"
 )
 
 func InitRoutes(db *pgxpool.Pool, cfg *config.Config) *api.Router {
 	r := api.NewRouter()
 
 	//MIDDLEWARE
-	//TODO: add middleware layyers
+	authMiddleware := middleware.Authenticate(db, cfg)
 
 	//HANDLERS
 	userHandler := NewUserHandler(db, cfg)
@@ -27,8 +28,8 @@ func InitRoutes(db *pgxpool.Pool, cfg *config.Config) *api.Router {
 	r.Post("/api/user/register", userHandler.Register)
 	r.Post("/api/user/login", userHandler.Login)
 
-	r.Post("/api/article/create", articleHandler.Create)
-	r.Get("/api/article/{id}", articleHandler.GetArticleById)
+	r.Post("/api/article/create", articleHandler.Create, authMiddleware)
+	r.Get("/api/article/{id}", articleHandler.GetArticleById, authMiddleware)
 
 	return r
 }

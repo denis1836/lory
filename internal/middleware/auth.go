@@ -19,8 +19,7 @@ type contextKey string
 const userContextKey contextKey = "user_context_key"
 
 type UserContext struct {
-	ID   int
-	Role string
+	ID int
 }
 
 func Authenticate(db *pgxpool.Pool, cfg *config.Config) func(http.Handler) http.Handler {
@@ -68,12 +67,14 @@ func Authenticate(db *pgxpool.Pool, cfg *config.Config) func(http.Handler) http.
 
 			var user UserContext
 			query := `
-				SELECT us.usrID, u.role
+				SELECT us.usrID
 				FROM User_Sessions us
 				JOIN Users u ON us.usrID = u.usrID
 				WHERE us.session_token = $1 AND us.expires_at > NOW();
 			`
-			err = db.QueryRow(r.Context(), query, sessionToken).Scan(&user.ID, &user.Role)
+			err = db.QueryRow(r.Context(), query, sessionToken).Scan(
+				&user.ID,
+			)
 			if err != nil {
 				if errors.Is(err, pgx.ErrNoRows) {
 					api.Error(w, http.StatusUnauthorized, "Session expired or invalid.")
