@@ -43,7 +43,7 @@ func (h *ArticleHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if art.Title == "" || art.ProjectID != 0 {
+	if art.Title == "" || art.ProjectID == 0 {
 		api.Error(w, http.StatusBadRequest, "missing fields")
 		return
 	}
@@ -68,17 +68,22 @@ func (h *ArticleHandler) Create(w http.ResponseWriter, r *http.Request) {
 		var pgErr *pgconn.PgError
 
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			api.Error(w, http.StatusBadRequest, "an article with this slug already exists")
+			if pgErr.ConstraintName == "articles_project_slug_uniq" {
+				api.Error(w, http.StatusBadRequest, "an article with this slug already exists")
+			} else if pgErr.ConstraintName == "articles_project_title_uniq" {
+				api.Error(w, http.StatusBadRequest, "an article with this title already exists")
+			} else {
+				api.Error(w, http.StatusBadRequest, "duplicate key value violation")
+			}
+			return
 		}
 
 		log.Printf("INSERT DB ERROR: %v", err)
-
 		api.Error(w, http.StatusInternalServerError, "database error")
 		return
 	}
 
 	hashBytes := sha256.Sum256([]byte(art.Title + art.Content))
-	revHash := hex.EncodeToString(hashBytes[:])
 
 	var artRev model.ArticleRevision
 	insertFirstRevisionQuery := `
@@ -86,15 +91,23 @@ func (h *ArticleHandler) Create(w http.ResponseWriter, r *http.Request) {
 		VALUES($1, $2, $3, $4, $5, $6, $7)
 		RETURNING artRID, created_at;
 	`
-	err = h.db.QueryRow(r.Context(), insertFirstRevisionQuery, art.ID, user.ID, 1, art.Title, art.Content, revHash, "Create \""+art.Title+"\"").Scan(
+	defMsg := "Create \"" + art.Title + "\""
+	err = h.db.QueryRow(r.Context(), insertFirstRevisionQuery, art.ID, user.ID, 1, art.Title, art.Content, hashBytes[:], defMsg).Scan(
 		&artRev.ID, &artRev.CreatedAt,
 	)
-
 	if err != nil {
 		log.Printf("INSERT DB ERROR: %v", err)
 		api.Error(w, http.StatusInternalServerError, "database error")
 		return
 	}
+
+	artRev.ArticleID = art.ID
+	artRev.UserID = uint64(user.ID)
+	artRev.RevisionNumber = 1
+	artRev.Title = art.Title
+	artRev.Content = art.Content
+	artRev.ContentHash = hex.EncodeToString(hashBytes[:])
+	artRev.Message = defMsg
 
 	api.JSON(w, http.StatusCreated, map[string]interface{}{
 		"message": "article created",
