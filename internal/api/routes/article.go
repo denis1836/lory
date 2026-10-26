@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -166,7 +167,65 @@ func (h *ArticleHandler) GetArticleRevisionsHistory(w http.ResponseWriter, r *ht
 // GET /api/article/<id>/<hash>
 // get article by specific rev
 func (h *ArticleHandler) GetArticleByIdAndHash(w http.ResponseWriter, r *http.Request) {
-	return
+	idParam := r.PathValue("id")
+	articleID, err := strconv.ParseInt(idParam, 10, 64)
+	if err != nil {
+		api.Error(w, http.StatusBadRequest, "invalid article id format")
+		return
+	}
+
+	hashParam := r.PathValue("hash")
+	if utf8.RuneCountInString(hashParam) != 64 {
+		api.Error(w, http.StatusBadRequest, "wrong hash length (expected 64 chars)")
+		return
+	}
+
+	hashBytes, err := hex.DecodeString(hashParam)
+	if err != nil || len(hashBytes) != 32 {
+		api.Error(w, http.StatusBadRequest, "invalid hash format")
+		return
+	}
+
+	var artRev model.ArticleRevision
+	var contentHashBytes []byte
+
+	getArticleRevByHash := `
+        SELECT artID, usrID, rev_num, title, content, content_hash, message, created_at
+        FROM Article_Revisions ar
+        WHERE ar.artID = $1 AND ar.content_hash = $2;
+    `
+	err = h.db.QueryRow(r.Context(), getArticleRevByHash, articleID, hashBytes).Scan(
+		&artRev.ArticleID,
+		&artRev.UserID,
+		&artRev.RevisionNumber,
+		&artRev.Title,
+		&artRev.Content,
+		&contentHashBytes,
+		&artRev.Message,
+		&artRev.CreatedAt,
+	)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			api.Error(w, http.StatusNotFound, "an article revision with this hash doesn't exist")
+			return
+		}
+
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			log.Printf("DB PG Error: code %s, message %s", pgErr.Code, pgErr.Message)
+		}
+
+		log.Printf("SELECT DB ERROR: %v", err)
+		api.Error(w, http.StatusInternalServerError, "database error")
+		return
+	}
+
+	artRev.ContentHash = hex.EncodeToString(contentHashBytes)
+
+	api.JSON(w, http.StatusOK, map[string]interface{}{
+		"art_rev": artRev,
+	})
 }
 
 // POST /api/article/edit/<id>

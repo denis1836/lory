@@ -33,6 +33,7 @@ func InitRoutes(db *pgxpool.Pool, cfg *config.Config) *api.Router {
 
 	r.Post("/api/article/create", articleHandler.Create, authMiddleware)
 	r.Get("/api/article/{id}", articleHandler.GetArticleById, authMiddleware)
+	r.Get("/api/article/{id}/{hash}", articleHandler.GetArticleByIdAndHash)
 
 	return r
 }
