@@ -25,3 +25,9 @@ type ArticleRevision struct {
 	Message        string    `json:"message"`
 	CreatedAt      time.Time `json:"created_at"`
 }
+
+type ArticleContributor struct {
+	ID            uint64 `json:"user_id"`
+	Name          string `json:"user_name"`
+	Contributions uint32 `json:"contributions"`
+}

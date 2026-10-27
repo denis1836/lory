@@ -240,10 +240,61 @@ func (h *ArticleHandler) GetArticleEditInfo(w http.ResponseWriter, r *http.Reque
 	return
 }
 
-// GET /api/article/contributors
-// users who contributed to the article and their connected stats
+// GET /api/article/<id>/contributors
+// users who contributed to the article and their stats
 func (h *ArticleHandler) GetArticleContributors(w http.ResponseWriter, r *http.Request) {
-	return
+	idParam := r.PathValue("id")
+	articleID, err := strconv.ParseInt(idParam, 10, 64)
+	if err != nil {
+		api.Error(w, http.StatusBadRequest, "invalid article id format")
+		return
+	}
+
+	var contributors []model.ArticleContributor
+
+	getArticleContributorsInfoQuery := `
+        SELECT 
+            u.usrID, 
+            u.name, 
+            COUNT(ar.artRID) AS contributions
+        FROM Users u
+        JOIN Article_Revisions ar ON u.usrID = ar.usrID
+        WHERE ar.artID = $1
+        GROUP BY u.usrID, u.name;
+    `
+	rows, err := h.db.Query(r.Context(), getArticleContributorsInfoQuery, articleID)
+	if err != nil {
+		api.Error(w, http.StatusInternalServerError, "database error")
+		return
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var c model.ArticleContributor
+		err := rows.Scan(
+			&c.ID, &c.Name, &c.Contributions,
+		)
+		if err != nil {
+			log.Printf("SCAN ERROR: %v", err)
+			api.Error(w, http.StatusInternalServerError, "scanning error")
+			return
+		}
+		contributors = append(contributors, c)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Printf("ROWS ERROR: %v", err)
+		api.Error(w, http.StatusInternalServerError, "rows error")
+		return
+	}
+
+	if contributors == nil {
+		contributors = []model.ArticleContributor{}
+	}
+
+	api.JSON(w, http.StatusOK, map[string]interface{}{
+		"contributors": contributors,
+	})
 }
 
 // GET /api/article/<id>/<hash>/diff
