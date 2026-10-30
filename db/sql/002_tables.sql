@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS Projects (
 
 CREATE TABLE IF NOT EXISTS Tags (
     tgID BIGSERIAL PRIMARY KEY,
-    project_ID BIGINT REFERENCES Projects(prjID),
+    prjID BIGINT REFERENCES Projects(prjID),
 
     name VARCHAR(128),
     description VARCHAR(512),

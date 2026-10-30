@@ -18,6 +18,7 @@ func InitRoutes(db *pgxpool.Pool, cfg *config.Config) *api.Router {
 	userHandler := NewUserHandler(db, cfg)
 	projectHandler := NewProjectHandler(db, cfg)
 	articleHandler := NewArticleHandler(db, cfg)
+	tagHandler := NewTagsHandler(db, cfg)
 
 	//HTML
 	r.Static("web-ui")
@@ -35,5 +36,6 @@ func InitRoutes(db *pgxpool.Pool, cfg *config.Config) *api.Router {
 	r.Get("/api/article/{id}", articleHandler.GetArticleById, authMiddleware)
 	r.Get("/api/article/{id}/{hash}", articleHandler.GetArticleByIdAndHash)
 
+	r.Post("/api/tag/create", tagHandler.Create)
 	return r
 }
